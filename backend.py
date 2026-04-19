@@ -9,6 +9,7 @@ import re
 import asyncio
 import tempfile
 import uuid
+import atexit
 from typing import Dict, Any, Optional
 
 import uvicorn
@@ -43,6 +44,32 @@ def is_ffmpeg_available() -> bool:
     if os.path.isfile("ffmpeg") and os.path.isfile("ffprobe"):
         return True
     return False
+
+# ─── COOKIE AUTH: YT_COOKIES_CONTENT env var → /tmp file ─────────────
+_COOKIE_FILE_PATH = os.path.join(tempfile.gettempdir(), "phantom_yt_cookies.txt")
+
+def _prepare_cookies() -> Optional[str]:
+    """
+    Reads the YT_COOKIES_CONTENT environment variable (set as a Secret on
+    Render / Hugging Face) and writes it to a temp file so yt-dlp can use it.
+    The file is deleted automatically when the process exits.
+    Returns the cookie file path if available, None otherwise.
+    """
+    content = os.environ.get("YT_COOKIES_CONTENT", "").strip()
+    if not content:
+        print("[AUTH] YT_COOKIES_CONTENT not set — running in anonymous mode (bot-block risk).")
+        return None
+    try:
+        with open(_COOKIE_FILE_PATH, "w", encoding="utf-8") as f:
+            f.write(content)
+        atexit.register(lambda: os.path.exists(_COOKIE_FILE_PATH) and os.remove(_COOKIE_FILE_PATH))
+        print("[AUTH] YouTube cookie file ready from environment variable.")
+        return _COOKIE_FILE_PATH
+    except Exception as e:
+        print(f"[AUTH] Failed to prepare cookie file: {e}")
+        return None
+
+ACTIVE_COOKIE_FILE: Optional[str] = _prepare_cookies()
 
 class MyLogger:
     def __init__(self, log_queue: queue.Queue):
@@ -242,13 +269,38 @@ class YTDLPWorker:
         elif os.path.isfile("ffmpeg") or os.path.isfile("ffmpeg.exe"):
             ffmpeg_loc = '.'
         
+        # ── Bot-bypass cookie status log ──────────────────────────────
+        if ACTIVE_COOKIE_FILE and os.path.exists(ACTIVE_COOKIE_FILE):
+            self.log_queue.put({"type": "log", "msg": "[AUTH] YouTube oturumu aktif — çerez dosyası kullanılıyor.\n"})
+        else:
+            self.log_queue.put({"type": "log", "msg": "[UYARI] Anonim mod — YT_COOKIES_CONTENT env var bulunamadı. Bot engeli olasılığı yüksek.\n"})
+
         ydl_opts: Dict[str, Any] = {
             'logger': MyLogger(self.log_queue),
             'progress_hooks': [self.download_hook],
             'outtmpl': temp_out,
             'noplaylist': True,
+            # ── YouTube Bot-Detection Bypass ────────────────────────────
+            # mweb: lightest fingerprint, most lenient PO Token enforcement.
+            # android/ios: fallback clients that bypass many GVS checks.
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['mweb', 'android', 'ios'],
+                }
+            },
+            # Throttle requests — prevents rate-limits on datacenter IPs
+            'sleep_interval_requests': 3,
+            'sleep_interval': 1,
+            # Robust retry on transient blocks
+            'retries': 10,
+            'fragment_retries': 10,
+            'file_access_retries': 5,
         }
-        
+
+        # Inject session cookie if available
+        if ACTIVE_COOKIE_FILE and os.path.exists(ACTIVE_COOKIE_FILE):
+            ydl_opts['cookiefile'] = ACTIVE_COOKIE_FILE
+
         if ffmpeg_loc:
             ydl_opts['ffmpeg_location'] = ffmpeg_loc
 
@@ -338,7 +390,19 @@ class InfoRequest(BaseModel):
 def extract_video_info(req: InfoRequest):
     def fetch():
         import yt_dlp
-        ydl_opts = {'noplaylist': True, 'quiet': True}
+        ydl_opts = {
+            'noplaylist': True,
+            'quiet': True,
+            # Same player_client cascade as the downloader
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['mweb', 'android', 'ios'],
+                }
+            },
+        }
+        # Apply cookie if available
+        if ACTIVE_COOKIE_FILE and os.path.exists(ACTIVE_COOKIE_FILE):
+            ydl_opts['cookiefile'] = ACTIVE_COOKIE_FILE
         ffmpeg_loc = None
         if shutil.which("ffmpeg"):
             ffmpeg_loc = os.path.dirname(shutil.which("ffmpeg"))
