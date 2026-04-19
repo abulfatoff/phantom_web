@@ -1,0 +1,22 @@
+# Local Windows FFmpeg binaries (Docker installs via apt-get)
+ffmpeg.exe
+ffprobe.exe
+ffmpeg
+ffprobe
+
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+
+# IDE
+.vscode
+.idea
+
+# OS
+Thumbs.db
+.DS_Store

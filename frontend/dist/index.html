@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PHANTOM</title>
+<meta name="description" content="PHANTOM - Professional cloud-based video and audio downloader powered by yt-dlp. Download videos in multiple formats and resolutions."/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = { darkMode: "class", theme: { extend: { colors: {
+            "outline": "#86948a", "surface-container-low": "#1c1b1d", "surface-container-highest": "#353437",
+            "surface-container": "#201f22", "background": "#131315", "error": "#ffb4ab", "primary-container": "#10b981",
+            "on-surface": "#e5e1e4", "surface-variant": "#353437", "surface-container-high": "#2a2a2c",
+            "on-surface-variant": "#bbcabf", "secondary": "#c0c1ff", "primary": "#4edea3", "on-primary-container": "#00422b", "on-primary": "#003824"
+        }, fontFamily: { "headline": ["Inter"], "body": ["Inter"], "label": ["Inter"], "mono": ["JetBrains Mono", "monospace"] } } } }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-[#0e0e10] dark:bg-[#0e0e10] h-screen w-64 flex flex-col bg-[#0e0e10] border-r border-[#3c4a42]/20 shadow-[4px_0_24px_rgba(0,0,0,0.5)] fixed left-0 top-0 z-40">
+<div class="p-8 pb-12 flex flex-col items-start gap-1">
+<h1 class="text-[#4edea3] font-black tracking-tighter text-2xl uppercase italic flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span> PHANTOM
+</h1>
+<p data-i18n="subtitle" class="font-['Inter'] antialiased tracking-tight text-on-surface-variant text-sm uppercase tracking-widest mt-2">Profesyonel İndirme Aracı</p>
+</div>
+<div class="flex-1 px-4 flex flex-col gap-2">
+<a data-target="captureView" class="nav-btn flex items-center gap-4 px-6 py-4 rounded-xl text-[#4edea3] bg-[#201f22] font-bold relative after:absolute after:left-0 after:h-full after:w-1 after:bg-[#4edea3] transition-all duration-300" href="#">
+<span class="material-symbols-outlined">download</span> <span data-i18n="nav_capture" class="font-['Inter'] antialiased tracking-tight uppercase tracking-widest text-sm">İndirme</span>
+</a>
+<a data-target="historyView" class="nav-btn flex items-center gap-4 px-6 py-4 rounded-xl text-[#c0c1ff]/60 hover:text-[#c0c1ff] hover:bg-[#201f22] transition-all duration-300" href="#">
+<span class="material-symbols-outlined">history</span> <span data-i18n="nav_history" class="font-['Inter'] antialiased tracking-tight uppercase tracking-widest text-sm">Geçmiş</span>
+</a>
+<a data-target="settingsView" class="nav-btn flex items-center gap-4 px-6 py-4 rounded-xl text-[#c0c1ff]/60 hover:text-[#c0c1ff] hover:bg-[#201f22] transition-all duration-300" href="#">
+<span class="material-symbols-outlined">settings</span> <span data-i18n="nav_settings" class="font-['Inter'] antialiased tracking-tight uppercase tracking-widest text-sm">Ayarlar</span>
+</a>
+<a data-target="contactView" class="nav-btn flex items-center gap-4 px-6 py-4 rounded-xl text-[#c0c1ff]/60 hover:text-[#c0c1ff] hover:bg-[#201f22] transition-all duration-300" href="#">
+<span class="material-symbols-outlined">contact_support</span> <span data-i18n="nav_contact" class="font-['Inter'] antialiased tracking-tight uppercase tracking-widest text-sm">İletişim</span>
+</a>
+</div>
+</nav>
+
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col ml-64 relative bg-surface">
+<header class="w-full h-16 flex items-center justify-end px-8 bg-[#131315]/80 backdrop-blur-xl border-b border-[#3c4a42]/10 fixed top-0 w-[calc(100%-16rem)] z-30">
+<div class="flex items-center gap-6">
+<span class="material-symbols-outlined text-[#c0c1ff]/40">notifications</span>
+<span class="material-symbols-outlined text-[#c0c1ff]/40">account_circle</span>
+</div>
+</header>
+
+<div class="flex-1 mt-16 p-12 overflow-y-auto relative">
+    
+    <!-- CAPTURE VIEW -->
+    <div id="captureView" class="view-panel flex flex-col gap-12 w-full max-w-5xl mx-auto transition-opacity duration-300 opacity-100">
+        <section class="flex flex-col gap-6 w-full">
+            <h2 class="font-headline text-[1.75rem] font-bold text-on-surface flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">add_link</span> <span data-i18n="cap_title">Hedef Bağlantı</span>
+            </h2>
+
+            <div class="relative group">
+                <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-on-surface-variant/50">
+                    <span class="material-symbols-outlined text-2xl">link</span>
+                </div>
+                <input id="urlInput" class="w-full bg-surface-container-highest text-on-surface font-mono text-lg rounded-xl pl-16 pr-20 py-6 border-0 focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/50 shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all" placeholder="Enter target URI..." type="text"/>
+            </div>
+            
+            <!-- Video Preview Card Container -->
+            <div id="videoPreviewContainer" class="hidden w-full transition-all duration-300"></div>
+
+            <div class="flex flex-col items-stretch gap-6 bg-surface-container-low p-6 rounded-2xl shadow-[inset_0_2px_24px_rgba(0,0,0,0.2)]">
+                <div class="flex flex-col gap-6 w-full relative">
+                    <!-- Dynamic Format Selector -->
+                    <div>
+                        <span data-i18n="cap_res" class="font-label text-[0.6875rem] uppercase tracking-[0.05em] text-on-surface-variant block mb-3">Çözünürlük ve Filtreler</span>
+                        <div id="formatButtonsContainer" class="flex flex-wrap gap-3 items-center">
+                            <button data-fmt-id="Auto" class="format-btn px-6 py-2 bg-primary-container text-on-primary-container rounded-full font-label text-[0.6875rem] uppercase tracking-[0.05em] font-bold shadow-[0_0_16px_rgba(16,185,129,0.3)] border border-primary/30 transition-all"><span data-i18n="fmt_auto">Otomatik</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Type Selector (Video/Audio) -->
+                    <div>
+                        <span data-i18n="dl_type" class="font-label text-[0.6875rem] uppercase tracking-[0.05em] text-on-surface-variant block mb-3">İndirme Tipi</span>
+                        <div class="flex gap-3">
+                            <button id="btnTypeVideo" class="flex-1 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold border border-primary/30 shadow-[0_0_16px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">movie</span> MP4 (Video)
+                            </button>
+                            <button id="btnTypeAudio" class="flex-1 py-3 bg-surface-container-high text-on-surface rounded-lg font-bold border border-outline-variant/20 hover:bg-surface-variant transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">graphic_eq</span> MP3 (Audio)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Partial Download Toggle -->
+                    <div>
+                        <span data-i18n="partial_dl" class="font-label text-[0.6875rem] uppercase tracking-[0.05em] text-on-surface-variant block mb-3">Bölgesel İndirme</span>
+                        <div class="flex gap-3 items-center mb-3">
+                            <button id="btnPartialOff" class="px-5 py-2 bg-primary-container text-on-primary-container rounded-lg font-bold text-sm shadow-[0_0_16px_rgba(16,185,129,0.3)] border border-primary/30 transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[1rem]">check_circle</span> <span data-i18n="full_video">Tam Video</span></button>
+                            <button id="btnPartialOn" class="px-5 py-2 bg-surface-container-high text-on-surface rounded-lg font-bold text-sm border border-outline-variant/20 hover:bg-surface-variant transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[1rem] hidden">check_circle</span> <span data-i18n="partial_video">Belirli Kısmı İndir</span></button>
+                        </div>
+                        <div id="partialInputs" class="hidden flex gap-4 mt-2">
+                            <div class="flex-1">
+                                <label data-i18n="start_time" class="text-xs text-on-surface-variant block mb-1">Başlangıç (00:00:00)</label>
+                                <input id="inputStartTime" type="text" placeholder="00:00:00" maxLength="8" class="w-full bg-surface-container-highest text-on-surface rounded-lg px-3 py-2 border border-outline-variant/20 font-mono text-sm focus:ring-1 focus:ring-primary focus:outline-none">
+                            </div>
+                            <div class="flex-1">
+                                <label data-i18n="end_time" class="text-xs text-on-surface-variant block mb-1">Bitiş (00:00:00)</label>
+                                <input id="inputEndTime" type="text" placeholder="00:00:00" maxLength="8" class="w-full bg-surface-container-highest text-on-surface rounded-lg px-3 py-2 border border-outline-variant/20 font-mono text-sm focus:ring-1 focus:ring-primary focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <button id="executeBtn" class="w-full mt-2 py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-xl font-bold uppercase tracking-widest text-sm shadow-[0_4px_32px_rgba(78,222,163,0.25)] hover:shadow-[0_8px_48px_rgba(78,222,163,0.4)] transition-all active:scale-[0.98] flex items-center justify-center gap-3 relative overflow-hidden">
+                    <span class="material-symbols-outlined text-2xl">download</span> <span id="executeText" data-i18n="btn_execute">İndirmeyi Başlat</span>
+                </button>
+            </div>
+            
+            <div class="mt-2 w-full flex flex-col gap-4">
+                <h3 class="font-label text-[0.6875rem] uppercase tracking-[0.05em] text-on-surface-variant flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[1rem]">terminal</span> <span data-i18n="log_title">İşlem Kayıtları (Log)</span>
+                </h3>
+                <div id="logContainer" class="bg-[#000000] rounded-xl p-6 h-64 overflow-y-auto font-mono text-sm leading-relaxed border border-outline-variant/20">
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- HISTORY VIEW -->
+    <div id="historyView" class="view-panel hidden flex flex-col gap-8 w-full max-w-5xl mx-auto opacity-0 transition-opacity duration-300">
+        <h2 class="font-headline text-[1.75rem] font-bold text-on-surface flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">history</span> <span data-i18n="hist_title">İndirme Kayıtları</span>
+        </h2>
+        <div class="bg-surface-container-low p-6 rounded-2xl shadow-[inset_0_2px_24px_rgba(0,0,0,0.2)]">
+            <div id="historyContainer" class="flex flex-col gap-3 min-h-[50vh] pr-2">
+                <div class="text-on-surface-variant text-sm py-4" data-i18n="hist_load">Kayıtlar Yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div id="settingsView" class="view-panel hidden flex flex-col gap-8 w-full max-w-5xl mx-auto opacity-0 transition-opacity duration-300">
+        <h2 class="font-headline text-[1.75rem] font-bold text-on-surface flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">settings</span> <span data-i18n="set_title">Sistem Ayarları</span>
+        </h2>
+        <div class="bg-surface-container-low p-6 rounded-2xl flex flex-col gap-6 shadow-[inset_0_2px_24px_rgba(0,0,0,0.2)]">
+            <div class="flex gap-6">
+                <div class="flex-1">
+                    <label data-i18n="set_lang" class="font-label text-[0.6875rem] uppercase tracking-[0.05em] text-on-surface-variant block mb-2">Dil (Language)</label>
+                    <select id="settingLang" class="w-full bg-surface-container-highest text-on-surface rounded-lg px-4 py-3 border border-outline-variant/20 focus:ring-1">
+                        <option value="TR">Türkçe</option>
+                        <option value="AZ">Azərbaycan</option>
+                        <option value="EN">English</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label data-i18n="set_theme" class="font-label text-[0.6875rem] uppercase tracking-[0.05em] text-on-surface-variant block mb-2">Tema Tipi</label>
+                    <select id="settingTheme" class="w-full bg-surface-container-highest text-on-surface rounded-lg px-4 py-3 border border-outline-variant/20 focus:ring-1">
+                        <option value="System">System</option>
+                        <option value="Dark">Dark Mode</option>
+                        <option value="Light">Light Mode</option>
+                    </select>
+                </div>
+            </div>
+            <button id="saveSettingsBtn" class="px-8 py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-xl font-bold uppercase tracking-widest text-sm shadow-[0_4px_32px_rgba(78,222,163,0.25)] hover:shadow-[0_8px_48px_rgba(78,222,163,0.4)] transition-all active:scale-[0.98] self-end flex items-center gap-2">
+                <span class="material-symbols-outlined">save</span> <span data-i18n="btn_save_set">Ayarları Kaydet</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- CONTACT VIEW -->
+    <div id="contactView" class="view-panel hidden flex flex-col gap-8 w-full max-w-5xl mx-auto opacity-0 transition-opacity duration-300">
+        <h2 class="font-headline text-[1.75rem] font-bold text-on-surface flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">contact_support</span> <span data-i18n="con_title">İletişim &amp; Destek</span>
+        </h2>
+        <div class="bg-surface-container-low flex flex-col items-center justify-center py-16 px-6 rounded-2xl shadow-[inset_0_2px_24px_rgba(0,0,0,0.2)]">
+            
+            <div class="w-24 h-24 bg-surface-container-high rounded-full flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] mb-8 border border-outline-variant/10">
+                <span class="material-symbols-outlined text-[3rem] text-primary">person</span>
+            </div>
+            
+            <h3 class="font-headline font-bold text-2xl tracking-wide mb-2 text-on-surface">Miri Abulfatoff</h3>
+            <p class="font-mono text-on-surface-variant text-sm tracking-wide opacity-80 mb-10">E-poçt: intheabulfatoff@gmail.com</p>
+
+            <a href="https://instagram.com/abulfatoff" target="_blank" rel="noopener noreferrer" id="instagramLinkBtn" class="px-8 py-4 bg-gradient-to-br from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white rounded-xl font-bold uppercase tracking-widest text-sm shadow-[0_4px_32px_rgba(253,29,29,0.3)] hover:shadow-[0_8px_48px_rgba(253,29,29,0.5)] transition-all active:scale-[0.98] flex items-center gap-3">
+                <span class="material-symbols-outlined">link</span> <span>Instagram</span>
+            </a>
+        </div>
+    </div>
+
+</div>
+</main>
+
+<script>
+    // ─── API HOST: Always use current origin (works on HF Spaces & localhost) ───
+    const API_HOST = window.location.origin;
+    
+    // Translation Dictionary
+    const i18n = {
+        "TR": {
+            "subtitle": "Profesyonel İndirme Aracı",
+            "nav_capture": "İndirme", "nav_history": "Kayıtlar", "nav_settings": "Ayarlar", "nav_contact": "İletişim",
+            "cap_title": "Hedef Bağlantı", "cap_res": "Çözünürlük ve Filtreler", "fmt_auto": "Otomatik", "fmt_audio": "Sadece Ses",
+            "btn_execute": "İndirmeyi Başlat", "btn_executing": "İŞLENİYOR...", "log_title": "İşlem Kayıtları (Log)",
+            "hist_title": "İndirme Kayıtları", "hist_load": "Kayıtlar Yükleniyor...", "hist_empty": "Henüz kayıt bulunamadı.", "hist_src": "Kaynak",
+            "set_title": "Sistem Ayarları", "set_lang": "Dil (Language)", "set_theme": "Tema Tipi",
+            "btn_save_set": "Ayarları Kaydet", "msg_saved": "Ayar değişiklikleri başarıyla kaydedildi.", "msg_empty": "Boş alan bırakılamaz.",
+            "con_title": "İletişim ve Destek", "msg_fetching": "Video bağlantısı inceleniyor...", "msg_err_fetch": "Bağlantı analiz edilemedi veya geçerli bir URL değil.",
+            "dl_type": "İndirme Tipi", "partial_dl": "Bölgesel İndirme", "full_video": "Tam Video", "partial_video": "Belirli Kısmı İndir", "start_time": "Başlangıç (00:00:00)", "end_time": "Bitiş (00:00:00)",
+            "msg_dl_fail": "İndirme başarısız oldu."
+        },
+        "EN": {
+            "subtitle": "Professional Download Tool",
+            "nav_capture": "Capture", "nav_history": "History", "nav_settings": "Settings", "nav_contact": "Contact",
+            "cap_title": "Acquire Target", "cap_res": "Resolution & Presets", "fmt_auto": "Auto", "fmt_audio": "Audio Only",
+            "btn_execute": "Execute", "btn_executing": "EXECUTING...", "log_title": "Execution Log",
+            "hist_title": "Vault History", "hist_load": "Loading history...", "hist_empty": "No generic records found.", "hist_src": "Source",
+            "set_title": "Core Settings", "set_lang": "Language", "set_theme": "Theme",
+            "btn_save_set": "Save Changes", "msg_saved": "Settings successfully applied.", "msg_empty": "Fields cannot be empty.",
+            "con_title": "Contact & Support", "msg_fetching": "Analyzing target link...", "msg_err_fetch": "Failed to analyze target or invalid URL.",
+            "dl_type": "Download Type", "partial_dl": "Partial Download", "full_video": "Full Video", "partial_video": "Download specific part", "start_time": "Start Time (00:00:00)", "end_time": "End Time (00:00:00)",
+            "msg_dl_fail": "Download failed."
+        },
+        "AZ": {
+            "subtitle": "Peşəkar Yükləmə Aləti",
+            "nav_capture": "Yükləmə", "nav_history": "Tarixçə", "nav_settings": "Tənzimləmələr", "nav_contact": "Əlaqə",
+            "cap_title": "Hədəf Keçid", "cap_res": "Görüntü və Filtrlər", "fmt_auto": "Avtomatik", "fmt_audio": "Yalnız Səs",
+            "btn_execute": "Yükləməyə Başla", "btn_executing": "YÜKLƏNİR...", "log_title": "Proses Qeydləri (Log)",
+            "hist_title": "Yükləmə Tarixçəsi", "hist_load": "Tarixçə Yüklənir...", "hist_empty": "Heç bir qeyd tapılmadı.", "hist_src": "Mənbə",
+            "set_title": "Sistem Tənzimləmələri", "set_lang": "Dil (Language)", "set_theme": "Tema Tipi",
+            "btn_save_set": "Tənzimləmələri Qeyd Et", "msg_saved": "Dəyişikliklər uğurla yadda saxlanıldı.", "msg_empty": "Girişlər boş qala bilməz.",
+            "con_title": "Əlaqə və Dəstək", "msg_fetching": "Video bağlantısı incələnir...", "msg_err_fetch": "Keçid analiz edilə bilmədi və ya etibarsızdır.",
+            "dl_type": "Yükləmə Növü", "partial_dl": "Qismən Yükləmə", "full_video": "Tam Video", "partial_video": "Müəyyən Hissə", "start_time": "Başlanğıc (00:00:00)", "end_time": "Bitiş (00:00:00)",
+            "msg_dl_fail": "Yükləmə uğursuz oldu."
+        }
+    };
+
+    function applyLanguage(lang) {
+        if(!i18n[lang]) lang = "EN";
+        const dict = i18n[lang];
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+            const key = el.getAttribute("data-i18n");
+            if (dict[key]) el.textContent = dict[key];
+        });
+        
+        document.querySelectorAll('.format-btn').forEach(btn => {
+            if (btn.getAttribute('data-fmt-id') === "Auto") {
+                btn.innerHTML = `<span data-i18n="fmt_auto">${dict["fmt_auto"]}</span>`;
+            } else {
+                btn.innerHTML = `${btn.getAttribute('data-fmt-id')}`;
+            }
+        });
+    }
+
+    let AppConfig = { remember: true, format: 0, custom_commands: "", theme: "System", language: "TR", custom_templates: {} };
+    const views = document.querySelectorAll('.view-panel');
+    const navBtns = document.querySelectorAll('.nav-btn');
+    const urlInput = document.getElementById("urlInput");
+    const executeBtn = document.getElementById("executeBtn");
+    const executeText = document.getElementById("executeText");
+    const logContainer = document.getElementById('logContainer');
+    
+    // UI state
+    let currentFormatId = "Auto";
+    let currentDownloadType = "video";
+    let isPartialDownload = false;
+
+    navBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = btn.getAttribute('data-target');
+            navBtns.forEach(b => {
+                b.classList.remove('bg-[#201f22]', 'text-[#4edea3]', 'after:absolute', 'after:left-0', 'after:h-full', 'after:w-1', 'after:bg-[#4edea3]');
+                b.classList.add('text-[#c0c1ff]/60');
+            });
+            btn.classList.add('bg-[#201f22]', 'text-[#4edea3]', 'after:absolute', 'after:left-0', 'after:h-full', 'after:w-1', 'after:bg-[#4edea3]');
+            btn.classList.remove('text-[#c0c1ff]/60');
+
+            views.forEach(v => { v.classList.add('hidden', 'opacity-0'); v.classList.remove('flex', 'opacity-100'); });
+            const targetEl = document.getElementById(targetId);
+            targetEl.classList.remove('hidden');
+            targetEl.classList.add('flex');
+            setTimeout(() => targetEl.classList.remove('opacity-0'), 50);
+
+            if (targetId === "historyView") loadHistory();
+        });
+    });
+
+    async function initSettings() {
+        try {
+            const res = await fetch(`${API_HOST}/api/settings`);
+            const data = await res.json();
+            AppConfig = data.settings;
+            if(!AppConfig.custom_templates) AppConfig.custom_templates = {};
+
+            document.getElementById('settingLang').value = AppConfig.language;
+            document.getElementById('settingTheme').value = AppConfig.theme;
+
+            applyLanguage(AppConfig.language);
+        } catch(e) { console.error("Config Loading Error", e); applyLanguage("TR"); }
+    }
+
+    document.getElementById('settingLang').addEventListener('change', (e) => { applyLanguage(e.target.value); });
+    
+    document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+        AppConfig.language = document.getElementById('settingLang').value;
+        AppConfig.theme = document.getElementById('settingTheme').value;
+        await pushSettings();
+        applyLanguage(AppConfig.language);
+        alert(i18n[AppConfig.language]["msg_saved"]);
+    });
+
+    async function pushSettings() {
+        await fetch(`${API_HOST}/api/settings`, {
+            method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(AppConfig)
+        });
+    }
+
+    async function loadHistory() {
+        try {
+            const hC = document.getElementById("historyContainer");
+            const res = await fetch(`${API_HOST}/api/history`);
+            const data = await res.json();
+            
+            if(!data.history || data.history.length === 0) {
+                hC.innerHTML = `<div class="text-on-surface-variant text-sm py-4">${i18n[AppConfig.language]["hist_empty"]}</div>`;
+                return;
+            }
+            
+            hC.innerHTML = "";
+            data.history.forEach(item => {
+                const row = document.createElement("div");
+                row.className = "flex justify-between items-center bg-surface-container-highest p-4 rounded-xl border border-outline-variant/20 hover:bg-surface-variant transition-colors";
+                row.innerHTML = `<div class="flex flex-col gap-1 truncate pr-4"><span class="text-on-surface font-bold text-sm truncate">${item.title}</span><span class="text-secondary font-mono text-xs truncate opacity-60">${item.format || ''}</span></div><div class="flex flex-col items-end text-xs font-mono whitespace-nowrap opacity-60"><span>${item.date}</span><a href="${item.url}" target="_blank" class="text-primary hover:underline mt-1">${i18n[AppConfig.language]["hist_src"]}</a></div>`;
+                hC.appendChild(row);
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    // Capture View Dynamic Logic
+    let debounceTimer;
+    urlInput.addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const url = urlInput.value.trim();
+            if(url.length > 5 && (url.includes('http://') || url.includes('https://'))) {
+                fetchVideoInfo(url);
+            } else {
+                document.getElementById("videoPreviewContainer").classList.add("hidden");
+                renderFormatButtons(["Auto"]);
+            }
+        }, 800);
+    });
+
+    async function fetchVideoInfo(url) {
+        const previewContainer = document.getElementById("videoPreviewContainer");
+        previewContainer.innerHTML = `<div class="text-secondary animate-pulse flex items-center gap-2 bg-surface-container p-4 rounded-xl border border-outline-variant/10"><span class="material-symbols-outlined animate-spin">progress_activity</span> <span data-i18n="msg_fetching">${i18n[AppConfig.language]["msg_fetching"]}</span></div>`;
+        previewContainer.classList.remove("hidden");
+        
+        try {
+            const req = await fetch(`${API_HOST}/api/info`, {
+                method: "POST", headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ url: url })
+            });
+            const res = await req.json();
+            if(res.error) throw new Error(res.error);
+            
+            previewContainer.innerHTML = `
+                <div class="flex gap-6 items-center bg-surface-container p-4 rounded-xl shadow-[inset_0_2px_16px_rgba(0,0,0,0.3)] w-full border top-0 border-outline-variant/10 overflow-hidden relative">
+                    <img src="${res.thumbnail}" onerror="this.src='https://via.placeholder.com/160x90?text=No+Thumbnail'" class="w-32 h-20 xl:w-40 xl:h-24 object-cover rounded-lg shadow-md border border-outline-variant/10">
+                    <div class="flex flex-col gap-2 flex-1 overflow-hidden z-10">
+                        <h3 class="font-bold text-sm xl:text-lg text-on-surface truncate">${res.title}</h3>
+                        <p class="text-xs text-on-surface-variant line-clamp-2 truncate">${res.formats.join(', ')} resolutions available</p>
+                    </div>
+                    <div class="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-surface-container to-transparent z-0 pointer-events-none"></div>
+                </div>
+            `;
+            renderFormatButtons(res.formats);
+            applyLanguage(AppConfig.language);
+        } catch(e) {
+            previewContainer.innerHTML = `<div class="text-error flex items-center gap-2 bg-error/10 p-4 rounded-xl"><span class="material-symbols-outlined">error</span> <span>${i18n[AppConfig.language]["msg_err_fetch"]}</span></div>`;
+        }
+    }
+
+    function renderFormatButtons(formats) {
+        const container = document.getElementById("formatButtonsContainer");
+        container.innerHTML = "";
+        
+        if(!formats.includes("Auto")) formats.unshift("Auto");
+        
+        formats.forEach(f => {
+            const btn = document.createElement("button");
+            btn.className = "format-btn px-6 py-2 rounded-full font-label text-[0.6875rem] uppercase tracking-[0.05em] font-bold transition-all border border-outline-variant/20 " + (f === currentFormatId ? "bg-primary-container text-on-primary-container shadow-[0_0_16px_rgba(16,185,129,0.3)] border-primary/30" : "bg-surface-container-high text-on-surface hover:bg-surface-variant");
+            btn.setAttribute("data-fmt-id", f);
+            if(f === "Auto") btn.innerHTML = `<span data-i18n="fmt_auto">${i18n[AppConfig.language]["fmt_auto"]}</span>`;
+            else btn.innerHTML = `${f}`;
+            
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".format-btn").forEach(b => {
+                    b.className = "format-btn px-6 py-2 rounded-full font-label text-[0.6875rem] uppercase tracking-[0.05em] font-bold transition-all border border-outline-variant/20 bg-surface-container-high text-on-surface hover:bg-surface-variant";
+                });
+                btn.className = "format-btn px-6 py-2 rounded-full font-label text-[0.6875rem] uppercase tracking-[0.05em] font-bold transition-all border border-primary/30 bg-primary-container text-on-primary-container shadow-[0_0_16px_rgba(16,185,129,0.3)]";
+                currentFormatId = f;
+            });
+            container.appendChild(btn);
+        });
+        
+        if(!formats.includes(currentFormatId)) {
+            currentFormatId = "Auto";
+            const firstChild = container.firstChild;
+            if(firstChild) {
+                firstChild.className = "format-btn px-6 py-2 rounded-full font-label text-[0.6875rem] uppercase tracking-[0.05em] font-bold transition-all border border-primary/30 bg-primary-container text-on-primary-container shadow-[0_0_16px_rgba(16,185,129,0.3)]";
+            }
+        }
+    }
+
+    // Type selection logic
+    const btnTypeVideo = document.getElementById("btnTypeVideo");
+    const btnTypeAudio = document.getElementById("btnTypeAudio");
+
+    btnTypeVideo.addEventListener("click", () => {
+        currentDownloadType = "video";
+        btnTypeVideo.className = "flex-1 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold border border-primary/30 shadow-[0_0_16px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2";
+        btnTypeAudio.className = "flex-1 py-3 bg-surface-container-high text-on-surface rounded-lg font-bold border border-outline-variant/20 hover:bg-surface-variant transition-all flex items-center justify-center gap-2";
+    });
+    btnTypeAudio.addEventListener("click", () => {
+        currentDownloadType = "audio";
+        btnTypeAudio.className = "flex-1 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold border border-primary/30 shadow-[0_0_16px_rgba(16,185,129,0.3)] transition-all flex items-center justify-center gap-2";
+        btnTypeVideo.className = "flex-1 py-3 bg-surface-container-high text-on-surface rounded-lg font-bold border border-outline-variant/20 hover:bg-surface-variant transition-all flex items-center justify-center gap-2";
+    });
+
+    // Partial Download Toggle Logic
+    const btnPartialOff = document.getElementById("btnPartialOff");
+    const btnPartialOn = document.getElementById("btnPartialOn");
+    const partialInputs = document.getElementById("partialInputs");
+    
+    function setPartial(state) {
+        isPartialDownload = state;
+        if(!state) {
+            btnPartialOff.className = "px-5 py-2 bg-primary-container text-on-primary-container rounded-lg font-bold text-sm shadow-[0_0_16px_rgba(16,185,129,0.3)] border border-primary/30 transition-all flex items-center justify-center gap-2";
+            btnPartialOff.querySelector('span.material-symbols-outlined').classList.remove('hidden');
+            btnPartialOn.className = "px-5 py-2 bg-surface-container-high text-on-surface rounded-lg font-bold text-sm border border-outline-variant/20 hover:bg-surface-variant transition-all flex items-center justify-center gap-2";
+            btnPartialOn.querySelector('span.material-symbols-outlined').classList.add('hidden');
+            partialInputs.classList.add("hidden");
+        } else {
+            btnPartialOn.className = "px-5 py-2 bg-primary-container text-on-primary-container rounded-lg font-bold text-sm shadow-[0_0_16px_rgba(16,185,129,0.3)] border border-primary/30 transition-all flex items-center justify-center gap-2";
+            btnPartialOn.querySelector('span.material-symbols-outlined').classList.remove('hidden');
+            btnPartialOff.className = "px-5 py-2 bg-surface-container-high text-on-surface rounded-lg font-bold text-sm border border-outline-variant/20 hover:bg-surface-variant transition-all flex items-center justify-center gap-2";
+            btnPartialOff.querySelector('span.material-symbols-outlined').classList.add('hidden');
+            partialInputs.classList.remove("hidden");
+        }
+    }
+    btnPartialOff.addEventListener("click", () => setPartial(false));
+    btnPartialOn.addEventListener("click", () => setPartial(true));
+
+    function applyTimeMask(e) {
+        let val = e.target.value.replace(/\D/g, "");
+        if (val.length > 6) val = val.substring(0, 6);
+        let formatted = "";
+        if (val.length > 4) formatted = val.substring(0,2) + ":" + val.substring(2,4) + ":" + val.substring(4);
+        else if (val.length > 2) formatted = val.substring(0,2) + ":" + val.substring(2);
+        else formatted = val;
+        e.target.value = formatted;
+    }
+    document.getElementById("inputStartTime").addEventListener("input", applyTimeMask);
+    document.getElementById("inputEndTime").addEventListener("input", applyTimeMask);
+
+    // ─── CLOUD DOWNLOAD: Blob fetch + browser save ──────────────────────
+    executeBtn.addEventListener("click", async () => {
+        const url = urlInput.value.trim();
+        if(!url) return;
+        
+        let sTime = "", eTime = "";
+        if(isPartialDownload) {
+            sTime = document.getElementById("inputStartTime").value.trim();
+            eTime = document.getElementById("inputEndTime").value.trim();
+            if(!sTime || !eTime) {
+                alert(i18n[AppConfig.language]["msg_empty"]);
+                return;
+            }
+        }
+        
+        executeBtn.disabled = true;
+        executeText.textContent = i18n[AppConfig.language]["btn_executing"];
+        executeBtn.classList.add("opacity-50", "cursor-not-allowed");
+        
+        try {
+            const response = await fetch(`${API_HOST}/api/download`, {
+                method: "POST", 
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ 
+                    url: url, 
+                    format_id: currentFormatId, 
+                    download_type: currentDownloadType,
+                    start_time: sTime,
+                    end_time: eTime,
+                    custom_commands: ""
+                })
+            });
+
+            // Check if response is a file (binary) or JSON error
+            const contentType = response.headers.get("content-type") || "";
+
+            if (!response.ok) {
+                // Error response: parse as JSON
+                let errMsg = i18n[AppConfig.language]["msg_dl_fail"];
+                try {
+                    const errData = await response.json();
+                    if (errData.error) errMsg = errData.error;
+                } catch(_) {}
+                throw new Error(errMsg);
+            }
+
+            if (contentType.includes("application/json")) {
+                // Shouldn't happen on success, but handle gracefully
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+            } else {
+                // SUCCESS: Binary file response → trigger browser download
+                const blob = await response.blob();
+                
+                // Extract filename from Content-Disposition header
+                const disposition = response.headers.get("content-disposition") || "";
+                let fileName = "download";
+                const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|"?)([^";]+)/i);
+                if (filenameMatch && filenameMatch[1]) {
+                    fileName = decodeURIComponent(filenameMatch[1].replace(/"/g, ''));
+                }
+                
+                // Create hidden <a> tag and trigger browser download
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = blobUrl;
+                a.download = fileName;
+                a.style.display = "none";
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                    document.body.removeChild(a);
+                }, 1000);
+            }
+        } catch(e) {
+            logContainer.innerHTML += `<div class="text-error mt-2">${e.message}</div>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        } finally {
+            executeBtn.disabled = false;
+            executeText.textContent = i18n[AppConfig.language]["btn_execute"];
+            executeBtn.classList.remove("opacity-50", "cursor-not-allowed");
+        }
+    });
+
+    // ─── WEBSOCKET: Auto ws/wss based on protocol ───────────────────────
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws/logs`;
+    let ws;
+    let currentProgressEl = null;
+
+    function connectWebSocket() {
+        ws = new WebSocket(wsUrl);
+
+        ws.onmessage = function(event) {
+            let payload = JSON.parse(event.data);
+            if (payload.type === "log" || payload.type === "ffmpeg_done") {
+                const div = document.createElement("div");
+                div.className = payload.msg.includes("[HATA]") || payload.msg.includes("[UYARI]") || payload.msg.includes("[XƏBƏR]") || payload.msg.includes("[ERROR]") ? "text-error mt-2" : "text-primary mt-2";
+                div.innerHTML = payload.msg.replace(/\n/g, "<br>");
+                logContainer.appendChild(div);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                currentProgressEl = null; 
+            } 
+            else if (payload.type === "progress") {
+                if (!currentProgressEl) {
+                    currentProgressEl = document.createElement("div");
+                    currentProgressEl.className = "text-primary flex items-center gap-4 mt-2";
+                    currentProgressEl.innerHTML = `<span class="progress-text w-64 text-sm font-mono truncate">${payload.msg}</span><div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden"><div class="progress-bar h-full bg-primary w-[0%] shadow-[0_0_12px_rgba(78,222,163,0.8)] transition-all duration-300"></div></div>`;
+                    logContainer.appendChild(currentProgressEl);
+                }
+                currentProgressEl.querySelector('.progress-text').textContent = payload.msg;
+                currentProgressEl.querySelector('.progress-bar').style.width = (payload.val * 100) + '%';
+                logContainer.scrollTop = logContainer.scrollHeight;
+            } 
+            else if (payload.type === "done") {
+                 // UI unlock is handled by the fetch finally block
+            }
+        };
+
+        ws.onclose = function() {
+            // Auto-reconnect after 3 seconds
+            setTimeout(connectWebSocket, 3000);
+        };
+
+        ws.onerror = function() {
+            ws.close();
+        };
+    }
+
+    window.addEventListener('DOMContentLoaded', () => { 
+        initSettings(); 
+        connectWebSocket();
+    });
+</script>
+</body></html>
